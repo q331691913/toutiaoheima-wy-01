@@ -6,10 +6,4 @@
 <script>
 export default {}
 </script>
-<style lang="less" scope>
-.box {
-  width: 100px;
-  height: 100px;
-  background-color: pink;
-}
-</style>
+<style lang="less" scope></style>

@@ -1,6 +1,6 @@
 // 存储数据
 export const setItem = (key, value) => {
-  // 讲数组、对象类型的数据转换为JSON格式字符串进行存储
+  // 将数组、对象类型的数据转换为JSON格式字符串进行存储
   if (typeof value === 'object') {
     value = JSON.stringify(value)
   }

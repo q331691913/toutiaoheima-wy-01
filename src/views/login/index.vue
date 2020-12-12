@@ -1,6 +1,13 @@
 <template>
-  <div class="login-container">
-    <van-nav-bar id="page-nav-bar" title="登陆" />
+  <div class="login-container container">
+    <van-nav-bar class="page-nav-bar" title="登陆">
+      <van-icon
+        v-if="$route.query.redirect"
+        slot="left"
+        name="cross"
+        @click="$router.back()"
+      />
+    </van-nav-bar>
     <van-form @submit="onSubmit" ref="loginForm">
       <van-field
         required
@@ -86,6 +93,9 @@ export default {
         const { data: res } = await login(user)
         this.$store.commit('setUser', res.data)
         this.$toast.success('登录成功', res)
+        // console.log(this.$router)
+        // this.$router.push('/my')
+        this.$router.push(this.$route.query.redirect || '/')
       } catch (err) {
         if (err.response.status === 400) {
           this.$toast.fail('手机号或者验证码错误！')
@@ -122,7 +132,6 @@ export default {
 </script>
 <style scoped lang="less">
 .verify-btn {
-  width: 152px;
   height: 46px;
   line-height: 46px;
   background-color: #ededed;
