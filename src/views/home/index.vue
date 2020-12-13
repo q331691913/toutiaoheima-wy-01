@@ -1,6 +1,6 @@
 <template>
   <div class="home-container">
-    <van-nav-bar class="page-nav-bar">
+    <van-nav-bar class="page-nav-bar" fixed>
       <van-button
         class="search-btn"
         slot="title"
@@ -18,7 +18,7 @@
         v-for="channel in channels"
         :key="channel.id"
       >
-        <article-list />
+        <article-list :channel="channel"/>
       </van-tab>
       <div slot="nav-right" class="placeholder">123</div>
       <div slot="nav-right" class="hamburger-btn">
@@ -43,6 +43,7 @@ export default {
   components: {
     ArticleList
   },
+
   created() {
     this.loadChannels()
   },
