@@ -18,30 +18,48 @@
         v-for="channel in channels"
         :key="channel.id"
       >
-        <article-list :channel="channel"/>
+        <article-list :channel="channel" />
       </van-tab>
       <div slot="nav-right" class="placeholder">123</div>
-      <div slot="nav-right" class="hamburger-btn">
+      <div
+        slot="nav-right"
+        class="hamburger-btn"
+        @click="isChennelEditShow = true"
+      >
         <i class="toutiao icon-gengduo"></i>
       </div>
     </van-tabs>
     <!-- tab栏切换结束 -->
+    <!-- 频道编辑弹出层 -->
+    <van-popup
+      v-model="isChennelEditShow"
+      closeable
+      close-icon-position="top-left"
+      position="bottom"
+      :style="{ height: '100%' }"
+    >
+      <channel-edit />
+    </van-popup>
+    <!-- 频道编辑弹出层结束 -->
   </div>
 </template>
 <script>
 import { getUserChannels } from '@/api/user'
 import ArticleList from './components/article-list'
+import ChannelEdit from './components/channel-edit'
 
 export default {
   name: 'HomeIndex',
   data() {
     return {
       active: 0,
-      channels: [] // 频道列表
+      channels: [], // 频道列表
+      isChennelEditShow: false
     }
   },
   components: {
-    ArticleList
+    ArticleList,
+    ChannelEdit
   },
 
   created() {
@@ -61,6 +79,8 @@ export default {
 </script>
 <style lang="less" scoped>
 .home-container {
+  padding-top: 180px;
+  padding-bottom: 100px;
   /deep/ .van-nav-bar__title {
     max-width: unset;
   }
@@ -123,6 +143,12 @@ export default {
         background-image: url(~@/assets/gradient-gray-line.png);
         background-size: contain;
       }
+    }
+    .van-tabs__wrap {
+      position: fixed;
+      top: 92px;
+      z-index: 2;
+      width: 100%;
     }
   }
 }

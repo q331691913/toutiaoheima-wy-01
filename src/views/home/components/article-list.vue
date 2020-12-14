@@ -1,30 +1,32 @@
 <template lang="">
-  <div>
+  <div class="article-list">
     <van-pull-refresh
-      v-model="isreFreshLoading"
+      v-model="isRefreshLoading"
       :success-text="refreshSuccessText"
-      :success-duration="1500"
       @refresh="onRefresh"
+      :success-duration="1500"
     >
       <van-list
         v-model="loading"
         :finished="finished"
         finished-text="没有更多了"
+        @load="onLoad"
         :error.sync="error"
         error-text="请求失败，点击重新加载"
-        @load="onLoad"
       >
-        <van-cell
+        <!-- <van-cell
           v-for="(article, index) in list"
           :key="index"
           :title="article.title"
-        />
+        /> -->
+        <article-item v-for="(article, index) in list" :key="index" :article="article" />
       </van-list>
     </van-pull-refresh>
   </div>
 </template>
 <script>
 import { getArticles } from '@/api/article'
+import ArticleItem from '@/components/article-item'
 export default {
   name: 'ArticleList',
   data() {
@@ -32,11 +34,14 @@ export default {
       list: [], // 存储列表数据的数组
       loading: false, // 控制加载中 loading 状态
       finished: false, // 控制数据加载结束的状态
-      timestamp: null, // 请求获取下一页数据的时间戳
-      error: false, // 控制列表加载失败的提示状态
-      isreFreshLoading: false, // 控制下拉刷新的 loading 状态
-      refreshSuccessText: '刷新成功' // 下拉刷新成功提示文本
+      timestamp: null, // 请求下一页数据的时间戳
+      error: false, // 是否加载失败
+      refreshSuccessText: '',
+      isRefreshLoading: false
     }
+  },
+  components: {
+    ArticleItem
   },
   props: {
     channel: {
@@ -44,59 +49,56 @@ export default {
       required: true
     }
   },
+  created() {},
   methods: {
     async onLoad() {
-      // 异步更新数据
-      // setTimeout 仅做示例，真实场景中一般为 ajax 请求
       try {
         const { data: res } = await getArticles({
           channel_id: this.channel.id,
           timestamp: this.timestamp || Date.now(),
-          with_top: 1 // 是否包含置顶，进入页面第一次请求时要包含置顶文章，1-包含置顶，0-不包含
+          with_top: 1
         })
-        console.log(res)
-        // 2. 把请求结果数据放到 list 数组中
+        // console.log(res)
         const { results } = res.data
-        // 数组的展开操作符，它会把数组元素一个一个拿出来
         this.list.push(...results)
+        // 使loading加载状态结束。
         this.loading = false
-        // 4. 判断数据是否全部加载完成
+        // 判断数据是否加载结束
         if (results.length) {
-          // 更新获取下一页数据的时间戳
           this.timestamp = res.data.pre_timestamp
         } else {
-          // 没有数据了，将 finished 设置为 true，不再 load 加载更多了
+          // 没有数据了，设置加载状态结束，不在触发上啦加载更多了
           this.finished = true
         }
       } catch (error) {
-        console.log('请求失败')
-        // 展示错误提示状态
-        this.error = true
-        // // 请求失败了，loading 也需要关闭
-        this.loading = false
+        // console.log(error)
+        this.loading = false // 关闭 loading 效果
+        this.error = true // 开启错误提示
+        // this.$toast('加载失败，请重试')
       }
     },
     async onRefresh() {
       try {
         const { data: res } = await getArticles({
-          channel_id: this.channel_id,
+          channel_id: this.channel.id,
           timestamp: Date.now(),
           with_top: 1
         })
-        // console.log(res)
-        // 将数据追加到列表的顶部
         const { results } = res.data
         this.list.unshift(...results)
-        // 关闭下拉刷新的loading状态
-        this.isreFreshLoading = false
-        // 更新下拉刷新成功提示的文本
+        this.isRefreshLoading = false
         this.refreshSuccessText = `刷新成功，更新了${results.length}条数据`
       } catch (error) {
-        this.refreshSuccessText = '刷新失败'
-        this.isreFreshLoading = false
+        this.isRefreshLoading = false // 关闭下拉刷新的loading 状态
+        this.$toast('刷新失败')
       }
     }
   }
 }
 </script>
-<style lang=""></style>
+<style lang="less" scoped>
+.artcile-list {
+  height: 79vh;
+  overflow: auto;
+}
+</style>
