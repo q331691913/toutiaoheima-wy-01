@@ -20,7 +20,7 @@
       >
         <article-list :channel="channel" />
       </van-tab>
-      <div slot="nav-right" class="placeholder">123</div>
+      <div slot="nav-right" class="placeholder"></div>
       <div
         slot="nav-right"
         class="hamburger-btn"
@@ -38,7 +38,11 @@
       position="bottom"
       :style="{ height: '100%' }"
     >
-      <channel-edit :myChannels="channels" />
+      <channel-edit
+        :myChannels="channels"
+        :active="active"
+        @update-active="onUpdateActive"
+      />
     </van-popup>
     <!-- 频道编辑弹出层结束 -->
   </div>
@@ -73,6 +77,11 @@ export default {
       } catch (err) {
         this.$toast('获取频道数据失败')
       }
+    },
+    onUpdateActive(index, isChennelEditShow = true) {
+      this.active = index
+      // 隐藏编辑
+      this.isChennelEditShow = isChennelEditShow
     }
   }
 }

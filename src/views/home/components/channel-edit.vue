@@ -3,8 +3,14 @@
     <!-- 频道推荐1 -->
     <van-cell>
       <div slot="title">我的频道</div>
-      <van-button class="edit-btn" type="danger" plain round size="mini"
-        >编辑</van-button
+      <van-button
+        class="edit-btn"
+        type="danger"
+        plain
+        round
+        size="mini"
+        @click="isEdit = !isEdit"
+        >{{ isEdit ? '完成' : '编辑' }}</van-button
       >
     </van-cell>
     <van-grid :gutter="10">
@@ -12,9 +18,17 @@
         class="grid-item"
         v-for="(channelItem, index) in myChannels"
         :key="index"
-        :text="channelItem.name"
-        icon="close"
-      />
+        @click="onMyChannelClick(channelItem, index)"
+      >
+        <span class="text" :class="{ active: index === active }" slot="text">{{
+          channelItem.name
+        }}</span>
+        <van-icon
+          v-show="isEdit && !fiexChannels.includes(channelItem.id)"
+          slot="icon"
+          name="close"
+        />
+      </van-grid-item>
     </van-grid>
     <!-- 频道推荐2 -->
     <van-cell>
@@ -23,20 +37,85 @@
     <van-grid class="recommend-grid" :gutter="10">
       <van-grid-item
         class="grid-item"
-        v-for="value in 8"
-        :key="value"
+        v-for="channel in recommendChannels"
+        :key="channel.id"
         icon="plus"
-        text="文字"
-      />
+        @click="onAddChannel(channel)"
+      >
+        <div class="text" slot="text">
+          {{ channel.name }}
+        </div>
+      </van-grid-item>
     </van-grid>
   </div>
 </template>
 <script>
+import { getAllChannels } from '@/api/article.js'
+// const _ = require('lodash')
 export default {
+  data() {
+    return {
+      allChannels: [],
+      isEdit: false,
+      fiexChannels: [0]
+    }
+  },
+  created() {
+    this.loadAllChannels()
+  },
   props: {
     myChannels: {
       type: Array,
       required: true
+    },
+    active: {
+      type: Number,
+      required: true
+    }
+  },
+  methods: {
+    // 加载所有频道
+    async loadAllChannels() {
+      try {
+        const { data: res } = await getAllChannels()
+        this.allChannels = res.data.channels
+      } catch (err) {
+        this.$toast('获取频道列表数据失败')
+      }
+    },
+    // 添加新我的频道
+    onAddChannel(channel) {
+      this.myChannels.push(channel)
+    },
+    onMyChannelClick(channel, index) {
+      if (this.isEdit) {
+        // 如果是固定频道，则不删除
+        if (this.fiexChannels.includes(channel.id)) {
+          return
+        }
+        // 如果是编辑状态，则执行删除频道
+        if (index <= this.active) {
+          this.$emit('update-active', this.active - 1, true)
+        }
+        this.myChannels.splice(index, 1)
+      } else {
+        // 非编辑状态，执行切换频道
+        this.$emit('update-active', index, false)
+      }
+    }
+  },
+  computed: {
+    // 用所有频道减去我的频道就是频道类型剩余的频道，这里我们用了filter方法和find方法组合
+    //  ，如果所有和我的频道里面有不同的id我们就返回他给recom计算属性
+    // 也可以用lodash中的diferenceBy方法。因为我们的类比对象是对象 以所有频道取异，
+    recommendChannels() {
+      // return this.allChannels.filter(
+      //   item => !this.myChannels.find(per => item.id === per.id)
+      // )
+      // return _.differenceBy(this.allChannels, this.myChannels, 'id')
+      return this.allChannels.filter(
+        item => !this.myChannels.find(per => item.id === per.id)
+      )
     }
   }
 }
@@ -55,14 +134,22 @@ export default {
     color: #f85959;
     border: 1px solid #f85959;
   }
-  /deep/ .grid-item {
+  .grid-item {
     width: 160px;
     height: 86px;
-    .van-grid-item_content {
-      background-color: #f4f5f6;
-      .van-grid-item__text {
+    /deep/ .van-grid-item__content {
+      background-color: #f5f5f6;
+      .van-grid-item__text,
+      .text {
+        color: #222;
         font-size: 28px;
-        color: #2222;
+        white-space: nowrap;
+      }
+      .active {
+        color: red;
+      }
+      .van-grid-item__icon-wrapper {
+        position: unset;
       }
     }
   }
@@ -73,10 +160,12 @@ export default {
       .van-icon {
         font-size: 24px;
       }
-
-      .van-grid-item__text {
+      .van-grid-item__text,
+      .text {
+        padding-left: 5px;
         font-size: 28px;
         margin-top: 0;
+        white-space: nowrap;
       }
     }
   }
