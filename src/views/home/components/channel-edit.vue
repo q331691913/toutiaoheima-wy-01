@@ -50,7 +50,9 @@
   </div>
 </template>
 <script>
-import { getAllChannels } from '@/api/article.js'
+import { getAllChannels, addUserChannels } from '@/api/channel'
+import { mapState } from 'vuex'
+import { setItem } from '@/utils/storage.js'
 // const _ = require('lodash')
 export default {
   data() {
@@ -84,8 +86,21 @@ export default {
       }
     },
     // 添加新我的频道
-    onAddChannel(channel) {
+    async onAddChannel(channel) {
       this.myChannels.push(channel)
+      if (this.user) {
+        try {
+          await addUserChannels({
+            id: channel.id, // 频道id
+            seq: this.myChannels.length // 序号
+          })
+        } catch (error) {
+          this.$toast('保存失败，请稍后重试')
+        }
+        // 登陆，把数据请求接口放到线上
+      } else {
+        setItem('TOUTIAO_CHANNELS', this.myChannels)
+      }
     },
     onMyChannelClick(channel, index) {
       if (this.isEdit) {
@@ -105,6 +120,7 @@ export default {
     }
   },
   computed: {
+    ...mapState(['user']),
     // 用所有频道减去我的频道就是频道类型剩余的频道，这里我们用了filter方法和find方法组合
     //  ，如果所有和我的频道里面有不同的id我们就返回他给recom计算属性
     // 也可以用lodash中的diferenceBy方法。因为我们的类比对象是对象 以所有频道取异，
