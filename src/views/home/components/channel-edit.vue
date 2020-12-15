@@ -50,7 +50,7 @@
   </div>
 </template>
 <script>
-import { getAllChannels, addUserChannels } from '@/api/channel'
+import { getAllChannel, addUserChannel, deleteUserChannel } from '@/api/channel'
 import { mapState } from 'vuex'
 import { setItem } from '@/utils/storage.js'
 // const _ = require('lodash')
@@ -79,7 +79,7 @@ export default {
     // 加载所有频道
     async loadAllChannels() {
       try {
-        const { data: res } = await getAllChannels()
+        const { data: res } = await getAllChannel()
         this.allChannels = res.data.channels
       } catch (err) {
         this.$toast('获取频道列表数据失败')
@@ -90,10 +90,11 @@ export default {
       this.myChannels.push(channel)
       if (this.user) {
         try {
-          await addUserChannels({
+          await addUserChannel({
             id: channel.id, // 频道id
             seq: this.myChannels.length // 序号
           })
+          this.$toast('添加成功')
         } catch (error) {
           this.$toast('保存失败，请稍后重试')
         }
@@ -113,9 +114,25 @@ export default {
           this.$emit('update-active', this.active - 1, true)
         }
         this.myChannels.splice(index, 1)
+        // 处理持久化
+        this.deleteChannel(channel)
       } else {
         // 非编辑状态，执行切换频道
         this.$emit('update-active', index, false)
+      }
+    },
+    async deleteChannel(channel) {
+      if (this.user) {
+        try {
+          await deleteUserChannel(channel.id)
+          this.$toast('删除成功')
+        } catch (error) {
+          this.$toast('删除失败')
+        }
+        // 已经登陆，将数据更新到线上
+      } else {
+        // 没登陆存本地
+        setItem('TOUTIAO_CHANNELS', this.myChannels)
       }
     }
   },

@@ -51,6 +51,8 @@
 import { getUserChannels } from '@/api/user'
 import ArticleList from './components/article-list'
 import ChannelEdit from './components/channel-edit'
+import { mapState } from 'vuex'
+import { getItem } from '@/utils/storage'
 
 export default {
   name: 'HomeIndex',
@@ -71,11 +73,17 @@ export default {
   },
   methods: {
     async loadChannels() {
-      try {
+      if (this.user) {
         const { data: res } = await getUserChannels()
         this.channels = res.data.channels
-      } catch (err) {
-        this.$toast('获取频道数据失败')
+      } else {
+        const localChannels = getItem('TOUTIAO_CHANNELS')
+        if (localChannels) {
+          this.channels = localChannels
+        } else {
+          const { data: res } = await getUserChannels()
+          this.channels = res.data.channels
+        }
       }
     },
     onUpdateActive(index, isChennelEditShow = true) {
@@ -83,6 +91,9 @@ export default {
       // 隐藏编辑
       this.isChennelEditShow = isChennelEditShow
     }
+  },
+  computed: {
+    ...mapState(['user'])
   }
 }
 </script>
