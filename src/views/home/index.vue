@@ -8,11 +8,19 @@
         size="small"
         round
         icon="search"
+        to="/search"
         >搜索</van-button
       >
     </van-nav-bar>
     <!-- tab栏切换 -->
-    <van-tabs v-model="active" animated swipeable class="channel-tabs">
+    <!-- swipe-threshold 滚动阈值，标签数量超过阈值且总宽度超过标签栏宽度时开始横向滚动 -->
+    <van-tabs
+      v-model="active"
+      animated
+      swipeable
+      class="channel-tabs"
+      swipe-threshold
+    >
       <van-tab
         :title="channel.name"
         v-for="channel in channels"
