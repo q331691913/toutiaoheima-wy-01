@@ -6,6 +6,7 @@
         slot="left"
         name="cross"
         @click="$router.back()"
+        color
       />
     </van-nav-bar>
     <van-form @submit="onSubmit" ref="loginForm">
@@ -67,6 +68,11 @@
 import { login, sendSms } from '@/api/user.js'
 export default {
   name: 'LoginPage',
+  props: [
+    {
+      color: '#fff !important'
+    }
+  ],
   data() {
     return {
       user: {
@@ -83,14 +89,14 @@ export default {
   },
   methods: {
     async onSubmit() {
-      const user = this.user
+      // const user = this.user
       this.$toast.loading({
         message: '登陆中...',
         forbidClick: true,
         duration: 0
       })
       try {
-        const { data: res } = await login(user)
+        const { data: res } = await login(this.user)
         this.$store.commit('setUser', res.data)
         this.$toast.success('登录成功', res)
         // console.log(this.$router)

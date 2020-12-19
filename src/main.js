@@ -7,6 +7,7 @@ import Vant from 'vant'
 import 'vant/lib/index.css'
 import 'amfe-flexible'
 import './utils/dayjs'
+import './styles/github-markdown.css'
 
 Vue.config.productionTip = false
 Vue.use(Vant)

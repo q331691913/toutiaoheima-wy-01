@@ -7,8 +7,26 @@
 // export default request
 import axios from 'axios'
 import store from '@/store'
+// 使用JSONBig的时候要把他的对象里面的数据转化为字符串来使用
+import JSONBig from 'json-bigint'
+// const jsonStr = '{ "art_id": 1245953273786007552 }'
+// console.log(JSONBig.parse(jsonStr)) // 把 JSON 格式的字符串转为 JavaScript 对象
 const request = axios.create({
-  baseURL: 'http://ttapi.research.itcast.cn/'
+  baseURL: 'http://ttapi.research.itcast.cn/',
+
+  transformResponse: [
+    function(data) {
+      try {
+        // 如果转换成功则返回转换的数据结果
+        return JSONBig.parse(data)
+      } catch (err) {
+        // 如果转换失败，则包装为统一数据格式并返回
+        return {
+          data
+        }
+      }
+    }
+  ]
 })
 // 请求拦截器
 request.interceptors.request.use(

@@ -34,7 +34,8 @@ export default {
       loading: false,
       finished: false,
       page: 1,
-      perPage: 20
+      perPage: 20,
+      error: false
     }
   },
   computed: {},
@@ -62,7 +63,7 @@ export default {
         } else {
           this.finished = true
         }
-      } catch (error) {
+      } catch (err) {
         this.error = true
         this.loading = false
       }

@@ -16,7 +16,11 @@
     <!-- /搜索栏 -->
 
     <!-- 搜索结果 -->
-    <search-result v-if="isResultShow" :search-text="searchText" />
+    <search-result
+      v-if="isResultShow"
+      :search-text="searchText"
+      @search="onSearch"
+    />
     <!-- /搜索结果 -->
 
     <!-- 联想建议 -->
@@ -28,7 +32,12 @@
     <!-- /联想建议 -->
 
     <!-- 搜索历史记录 -->
-    <search-history v-else />
+    <search-history
+      v-else
+      :SearchHistories="SearchHistories"
+      @clear-search-histories="SearchHistories = []"
+      @search="onSearch"
+    />
     <!-- /搜索历史记录 -->
   </div>
 </template>
@@ -37,6 +46,8 @@
 import SearchHistory from './components/search-history.vue'
 import SearchSuggestion from './components/search-suggestion'
 import SearchResult from './components/search-result'
+import { setItem } from '@/utils/storage'
+import { getItem } from '@/utils/storage'
 
 export default {
   name: 'SearchPage',
@@ -48,16 +59,26 @@ export default {
   props: {},
   data() {
     return {
+      SearchHistories: getItem('TOUTIAO_SEARCH_HISTORIES') || [],
       isResultShow: false,
       searchText: ''
     }
   },
   computed: {},
-  watch: {},
+  watch: {
+    SearchHistories(value) {
+      setItem('TOUTIAO_SEARCH_HISTORIES', value)
+    }
+  },
   created() {},
   methods: {
     onSearch(val) {
       this.searchText = val
+      const index = this.SearchHistories.indexOf(val)
+      if (index !== -1) {
+        this.SearchHistories.splice(index, 1)
+      }
+      this.SearchHistories.unshift(val)
       this.isResultShow = true
     },
     onCancel() {
