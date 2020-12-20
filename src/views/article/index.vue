@@ -2,10 +2,18 @@
   <div class="article-container">
     <!-- 导航栏 -->
     <van-nav-bar class="page-nav-bar" title="黑马头条">
-      <van-icon slot="left" name="arrow-left"  @click="this.$router.back()" />
+      <van-icon slot="left" name="arrow-left" @click="$router.back()" />
     </van-nav-bar>
     <!-- /导航栏 -->
-
+    <!-- 评论回复 -->
+    <van-popup v-model="isReplyShow" position="bottom" style="height: 100%;">
+      <comment-reply
+        v-if="isReplyShow"
+        :comment="currentComment"
+        @close="isReplyShow = false"
+      />
+    </van-popup>
+    <!-- / 评论回复 -->
     <div class="main-wrap">
       <!-- 加载中 -->
       <div class="loading-wrap" v-if="loading">
@@ -52,6 +60,7 @@
           :source="article.art_id"
           @onload-success="totalCommentCount = $event.total_count"
           :list="commentList"
+          @reply-click="onReplyClick"
         />
 
         <!-- 底部区域 -->
@@ -117,6 +126,8 @@ import CollectArticle from '@/components/collect-article'
 import LikeArticle from '@/components/like-article'
 import commentList from './components/comment-list'
 import CommentPost from './components/comment-post'
+import CommentReply from './components/comment-reply'
+
 export default {
   name: 'ArticleIndex',
   components: {
@@ -124,12 +135,18 @@ export default {
     CollectArticle,
     LikeArticle,
     commentList,
-    CommentPost
+    CommentPost,
+    CommentReply
   },
   props: {
     articleId: {
       type: [Number, String, Object],
       required: true
+    }
+  },
+  provide() {
+    return {
+      articleId: this.articleId
     }
   },
   data() {
@@ -140,7 +157,9 @@ export default {
       followLoading: false, // 关注按钮的 loading 状态
       totalCommentCount: 0,
       isPostShow: false, // 控制评论弹层显示/隐藏
-      commentList: []
+      commentList: [],
+      isReplyShow: false,
+      currentComment: {} // 当前点击回复项
     }
   },
   computed: {},
@@ -219,6 +238,10 @@ export default {
       this.isPostShow = false
       // 将发布内容显示到列表顶部
       this.commentList.unshift(data.new_obj)
+    },
+    onReplyClick(comment) {
+      this.currentComment = comment
+      this.isReplyShow = true
     }
   }
 }

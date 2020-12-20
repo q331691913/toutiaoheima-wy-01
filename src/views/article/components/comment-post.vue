@@ -10,7 +10,9 @@
       placeholder="请输入留言"
       show-word-limit
     />
-    <van-button class="post-btn" @click="onPost" :disabled="!message.length">发布</van-button>
+    <van-button class="post-btn" @click="onPost" :disabled="!message.length"
+      >发布</van-button
+    >
   </div>
 </template>
 
@@ -23,6 +25,12 @@ export default {
     target: {
       type: [Number, String, Object],
       required: true
+    }
+  },
+  inject: {
+    articleId: {
+      type: [Number, String, Object],
+      default: null
     }
   },
   data() {
@@ -38,9 +46,9 @@ export default {
     async onPost() {
       try {
         const { data: res } = await addComment({
-          target: this.target, // 评论的目标id
+          target: this.target.toString(), // 评论的目标id
           content: this.message, // 评论内容
-          art_id: null // 文章id，对评论内容发表回复时，需要传递此参数
+          art_id: this.articleId ? this.articleId.toString() : this.articleId // 文章id，对评论内容发表回复时，需要传递此参数
         })
         console.log(res)
         // 关闭弹出层

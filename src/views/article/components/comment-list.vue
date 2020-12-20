@@ -6,13 +6,19 @@
     :error.sync="error"
     error-text="加载失败，请点击重试"
     @load="onLoad"
+    :immediate-check = "false"
   >
     <!-- <van-cell
       v-for="(item, index) in list"
       :key="index"
       :title="item.content"
     /> -->
-    <comment-item v-for="(item, index) in list" :key="index" :comment="item" />
+    <comment-item
+      v-for="(item, index) in list"
+      :key="index"
+      :comment="item"
+      @reply-click="$emit('reply-click', $event)"
+    />
   </van-list>
 </template>
 
@@ -33,6 +39,13 @@ export default {
     list: {
       type: Array,
       default: () => []
+    },
+    type: {
+      type: String,
+      validator(value) {
+        return ['a', 'c'].includes(value)
+      },
+      default: 'a'
     }
   },
   data() {
@@ -47,6 +60,7 @@ export default {
   },
   created() {
     // 一上来就加载一次，为了显示评论总数
+    this.loading = true
     this.onLoad()
   },
   methods: {
@@ -54,7 +68,7 @@ export default {
       try {
         // 1. 请求数据
         const { data } = await getComments({
-          type: 'a', // 评论类型，a 代表对文章的评论
+          type: this.type, // 评论类型，a 代表对文章的评论
           source: this.source.toString(), // 源 id，文章 id 或评论 id
           offset: this.offset,
           limit: this.limit // 获取的个数
