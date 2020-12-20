@@ -1,9 +1,9 @@
 import request from '@/utils/request'
 
 /**
- * 获取搜索联想建议
+ * 搜索建议
  */
-export const getSearchSuggestion = q => {
+export const getSearchSuggestions = q => {
   return request({
     method: 'GET',
     url: '/app/v1_0/suggestion',
@@ -12,10 +12,11 @@ export const getSearchSuggestion = q => {
     }
   })
 }
+
 /**
- * 获取搜索结果
+ * 搜索结果
  */
-export function getSearch(params) {
+export const getSearchResult = params => {
   return request({
     method: 'GET',
     url: '/app/v1_0/search',

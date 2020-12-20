@@ -1,11 +1,9 @@
-<template lang="">
-  <div>
-    <h3>问答</h3>
-  </div>
+<template>
+  <div class="qa-container">问答</div>
 </template>
+
 <script>
 export default {
-  name: 'QeIndex'
+  name: 'QaIndex'
 }
 </script>
-<style lang="" scoped></style>

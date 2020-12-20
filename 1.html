@@ -15,12 +15,29 @@
       //     1000 * i
       //   )
       // }
-      for (var i =0; i < 5; i++) {
-        setTimeout(() => {
-            console.log(i);
-        }, 1000);
-    }
+      // for (var i = 0; i < 5; i++) {
+      //   setTimeout(() => {
+      //     console.log(i)
+      //   }, 1000)
+      // }
 
+      var num = prompt('输入一个大于2的正整数')
+
+      var isZ = true // 定义一个为真的变量
+
+      // 输入的数会进循环里面去
+      for (var i = 2; i < num; i++) {
+        // 如果取余num % i === 0成立 isZ=false 就不是质数，取余num % i === 0不成立 立马跳出循环
+        if (num % i === 0) {
+          isZ = false
+        }
+      }
+      // 此处的isZ为真我们就打印为质数， 为假我们就不是质数
+      if (isZ) {
+        alert(num + '是质数')
+      } else {
+        alert(num + '不是质数')
+      }
       // 同步任务最先执行 然后 是微任务  然后是宏任务
 
       // 浅:

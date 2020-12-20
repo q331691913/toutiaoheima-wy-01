@@ -1,8 +1,8 @@
-<template lang="">
+<template>
   <div class="channel-edit">
-    <!-- 频道推荐1 -->
-    <van-cell>
-      <div slot="title">我的频道</div>
+    <!-- 我的频道标题 -->
+    <van-cell :border="false">
+      <div slot="title" class="title-text">我的频道</div>
       <van-button
         class="edit-btn"
         type="danger"
@@ -13,58 +13,54 @@
         >{{ isEdit ? '完成' : '编辑' }}</van-button
       >
     </van-cell>
-    <van-grid :gutter="10">
+    <!-- 我的频道内容 -->
+    <van-grid class="my-grid" :gutter="10">
       <van-grid-item
         class="grid-item"
-        v-for="(channelItem, index) in myChannels"
+        v-for="(channel, index) in myChannels"
         :key="index"
-        @click="onMyChannelClick(channelItem, index)"
+        @click="onMyChannelClick(channel, index)"
       >
-        <span class="text" :class="{ active: index === active }" slot="text">{{
-          channelItem.name
-        }}</span>
         <van-icon
-          v-show="isEdit && !fiexChannels.includes(channelItem.id)"
+          v-show="isEdit && !fixedChannels.includes(channel.id)"
           slot="icon"
-          name="close"
-        />
+          name="clear"
+        ></van-icon>
+        <!-- 对象中的 key 代表要作用的 css 类名 -->
+        <span class="text" slot="text" :class="{ active: index === active }">{{
+          channel.name
+        }}</span>
       </van-grid-item>
     </van-grid>
-    <!-- 频道推荐2 -->
-    <van-cell>
+    <!-- 频道推荐标题 -->
+    <van-cell :border="false">
       <div slot="title" class="title-text">频道推荐</div>
     </van-cell>
+    <!-- 频道推荐内容 -->
     <van-grid class="recommend-grid" :gutter="10">
       <van-grid-item
         class="grid-item"
-        v-for="channel in recommendChannels"
-        :key="channel.id"
+        v-for="(channel, index) in recommendChannels"
+        :key="index"
         icon="plus"
+        :text="channel.name"
         @click="onAddChannel(channel)"
       >
-        <div class="text" slot="text">
-          {{ channel.name }}
-        </div>
       </van-grid-item>
     </van-grid>
   </div>
 </template>
+
 <script>
-import { getAllChannel, addUserChannel, deleteUserChannel } from '@/api/channel'
+import {
+  getAllChannels,
+  addUserChannel,
+  deleteUserChannel
+} from '@/api/channel'
 import { mapState } from 'vuex'
-import { setItem } from '@/utils/storage.js'
-// const _ = require('lodash')
+import { setItem } from '@/utils/storage'
 export default {
-  data() {
-    return {
-      allChannels: [],
-      isEdit: false,
-      fiexChannels: [0]
-    }
-  },
-  created() {
-    this.loadAllChannels()
-  },
+  name: 'ChannelEdit',
   props: {
     myChannels: {
       type: Array,
@@ -75,91 +71,121 @@ export default {
       required: true
     }
   },
+  data() {
+    return {
+      allChannels: [], // 所有频道
+      isEdit: false, // 控制编辑状态的显示
+      fixedChannels: [0] // 固定频道，不允许删除
+    }
+  },
+  computed: {
+    /* recommendChannels() {
+      const channels = []
+      this.allChannels.forEach(channel => {
+        // find 找到符合条件的第一个就返回，后面就不再查找！
+        const ret = this.myChannels.find(
+          myChannel => myChannel.id === channel.id
+        )
+        // 我的频道没有找到 channel，则收集
+        if (!ret) {
+          channels.push(channel)
+        }
+      })
+      return channels
+    } */
+    ...mapState(['user']),
+    recommendChannels() {
+      // filter 把符合条件的元素返回到新数组
+      return this.allChannels.filter(channel => {
+        // find 找到符合条件的第一个就返回，后面就不再查找！
+        return !this.myChannels.find(myChannel => myChannel.id === channel.id)
+      })
+    }
+  },
+  created() {
+    this.loadAllChannels()
+  },
   methods: {
-    // 加载所有频道
     async loadAllChannels() {
       try {
-        const { data: res } = await getAllChannel()
-        this.allChannels = res.data.channels
-      } catch (err) {
-        this.$toast('获取频道列表数据失败')
+        const { data } = await getAllChannels()
+        this.allChannels = data.data.channels
+      } catch {
+        this.$toast('数据获取失败')
       }
     },
-    // 添加新我的频道
+    // 添加频道
     async onAddChannel(channel) {
       this.myChannels.push(channel)
+      // 数据持久化处理
       if (this.user) {
+        // 已登录，把数据通过接口请求放到线上
         try {
           await addUserChannel({
-            id: channel.id, // 频道id
+            id: channel.id, // 频道 ID
             seq: this.myChannels.length // 序号
           })
-          this.$toast('添加成功')
-        } catch (error) {
+        } catch (err) {
           this.$toast('保存失败，请稍后重试')
         }
-        // 登陆，把数据请求接口放到线上
       } else {
+        // 未登录，把数据存储到本地
         setItem('TOUTIAO_CHANNELS', this.myChannels)
       }
     },
     onMyChannelClick(channel, index) {
+      // 如果是编辑状态，删除频道
       if (this.isEdit) {
-        // 如果是固定频道，则不删除
-        if (this.fiexChannels.includes(channel.id)) {
+        if (this.fixedChannels.includes(channel.id)) {
+          // 如果是固定频道则不删除
           return
         }
-        // 如果是编辑状态，则执行删除频道
         if (index <= this.active) {
-          this.$emit('update-active', this.active - 1, true)
+          // 让激活频道的索引 - 1
+          this.$emit('update-active', this.active - 1)
         }
         this.myChannels.splice(index, 1)
-        // 处理持久化
+
+        // 数据持久化
         this.deleteChannel(channel)
       } else {
-        // 非编辑状态，执行切换频道
+        // 非编辑状态，切换频道
         this.$emit('update-active', index, false)
       }
     },
     async deleteChannel(channel) {
-      if (this.user) {
-        try {
+      try {
+        if (this.user) {
+          // 已登录，将数据更新到后端
           await deleteUserChannel(channel.id)
-          this.$toast('删除成功')
-        } catch (error) {
-          this.$toast('删除失败')
+        } else {
+          // 未登录，将数据更新到本地
+          setItem('TOUTIAO_CHANNELS', this.myChannels)
         }
-        // 已经登陆，将数据更新到线上
-      } else {
-        // 没登陆存本地
-        setItem('TOUTIAO_CHANNELS', this.myChannels)
+      } catch (err) {
+        this.$toast('操作失败，请稍后重试')
       }
-    }
-  },
-  computed: {
-    ...mapState(['user']),
-    // 用所有频道减去我的频道就是频道类型剩余的频道，这里我们用了filter方法和find方法组合
-    //  ，如果所有和我的频道里面有不同的id我们就返回他给recom计算属性
-    // 也可以用lodash中的diferenceBy方法。因为我们的类比对象是对象 以所有频道取异，
-    recommendChannels() {
-      // return this.allChannels.filter(
-      //   item => !this.myChannels.find(per => item.id === per.id)
-      // )
-      // return _.differenceBy(this.allChannels, this.myChannels, 'id')
-      return this.allChannels.filter(
-        item => !this.myChannels.find(per => item.id === per.id)
-      )
     }
   }
 }
+
+// 代码测试
+/* const allChannels = [{ "id": 0, "name": "开发者资讯" }, { "id": 1, "name": "666" }];
+const myChannels = [{ "id": 0, "name": "开发者资讯" }, { "id": 6, "name": "css" }];
+const r = allChannels.filter(channel => {
+  return !myChannels.find(myChannel => myChannel.id === channel.id)
+});
+console.log(r); */
 </script>
-<style lang="less" scoped>
+
+<style scoped lang="less">
 .channel-edit {
   padding: 85px 0;
   .title-text {
     font-size: 32px;
-    color: #333;
+    color: #333333;
   }
+  // 编辑按钮
   .edit-btn {
     width: 104px;
     height: 48px;
@@ -167,16 +193,17 @@ export default {
     color: #f85959;
     border: 1px solid #f85959;
   }
-  .grid-item {
+  /deep/ .grid-item {
     width: 160px;
     height: 86px;
-    /deep/ .van-grid-item__content {
-      background-color: #f5f5f6;
+    .van-grid-item__content {
+      white-space: nowrap;
+      background-color: #f4f5f6;
       .van-grid-item__text,
       .text {
-        color: #222;
         font-size: 28px;
-        white-space: nowrap;
+        color: #222;
+        margin-top: 0;
       }
       .active {
         color: red;
@@ -186,28 +213,30 @@ export default {
       }
     }
   }
-  /deep/ .recommend-grid {
-    .van-grid-item__content {
-      flex-direction: row;
-      color: #222;
-      .van-icon {
-        font-size: 24px;
-      }
-      .van-grid-item__text,
-      .text {
-        padding-left: 5px;
-        font-size: 28px;
-        margin-top: 0;
-        white-space: nowrap;
+
+  /deep/ .my-grid {
+    .grid-item {
+      .van-icon-clear {
+        position: absolute;
+        right: -10px;
+        top: -10px;
+        font-size: 30px;
+        color: #cacaca;
+        z-index: 2;
       }
     }
   }
-  /deep/ .van-icon-close {
-    position: absolute;
-    right: -10px;
-    top: -10px;
-    font-size: 36px;
-    color: #ccc;
+
+  /deep/ .recommend-grid {
+    .grid-item {
+      .van-grid-item__content {
+        flex-direction: row;
+        .van-icon-plus {
+          font-size: 28px;
+          margin-right: 6px;
+        }
+      }
+    }
   }
 }
 </style>

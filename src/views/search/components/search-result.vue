@@ -4,13 +4,13 @@
       v-model="loading"
       :finished="finished"
       finished-text="没有更多了"
-      @load="onLoad"
       :error.sync="error"
-      error-text="请求失败，点击重新加载"
+      error-text="加载失败，请点击重试"
+      @load="onLoad"
     >
       <van-cell
-        v-for="article in list"
-        :key="article.art_id"
+        v-for="(article, index) in list"
+        :key="index"
         :title="article.title"
       />
     </van-list>
@@ -18,14 +18,13 @@
 </template>
 
 <script>
-import { getSearch } from '@/api/search'
+import { getSearchResult } from '@/api/search'
 export default {
   name: 'SearchResult',
-  components: {},
   props: {
     searchText: {
       type: String,
-      require: true
+      required: true
     }
   },
   data() {
@@ -38,38 +37,45 @@ export default {
       error: false
     }
   },
-  computed: {},
-  watch: {},
-  created() {},
-  mounted() {},
   methods: {
     async onLoad() {
       try {
-        // 异步更新数据
-        const { data: res } = await getSearch({
+        // 1
+        const { data } = await getSearchResult({
           page: this.page, // 页码
-          per_page: this.perPage, // 每页大小
-          q: this.searchText // 搜索关键字
+          per_page: this.perPage, // 每页条数
+          q: this.searchText // 查询关键词
         })
-        // 将数据添加到列表中
-        const { results } = res.data
+        if (Math.random() > 0.5) {
+          JSON.parse('xxx')
+        }
+        // 2
+        const { results } = data.data
         this.list.push(...results)
-
-        // 加载状态结束
+        // 3
         this.loading = false
-        // 数据全部加载完成
+        // 4
         if (results.length) {
+          // 4.1
           this.page++
         } else {
+          // 4.2
           this.finished = true
         }
       } catch (err) {
-        this.error = true
-        this.loading = false
+        this.error = true // 展示加载失败
+        this.loading = false // 关闭 loading
+        // this.$toast('数据获取失败，请稍后重试')
       }
+      // 1. 请求数据
+      // 2. 将数据添加到数组列表中
+      // 3. 将本次加载中的 loading 关闭
+      // 4. 判断是否还有数据
+      // 4.1 如果有，则更新获取下一个数据的页码
+      // 4.2 如果无，则将加载状态 finished 设置为结束
     }
   }
 }
 </script>
 
-<style scoped lang="less"></style>
+<style lang="less" scoped></style>
