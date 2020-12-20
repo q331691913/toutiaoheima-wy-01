@@ -8,8 +8,9 @@
       @click-left="$router.back()"
     />
     <!-- /导航栏 -->
+    <input type="file" hidden ref="file" @change="onFileChange" />
     <!-- 个人信息 -->
-    <van-cell title="头像" is-link>
+    <van-cell title="头像" is-link @click="$refs.file.click()">
       <van-image class="avatar" fit="cover" round :src="user.photo" />
     </van-cell>
     <van-cell
@@ -55,6 +56,14 @@
         @close="isUpdataBirthdayShow = false"
       />
     </van-popup>
+    <!-- 编辑头像 -->
+    <van-popup
+      v-model="isUpdataPhotoShow"
+      position="bottom"
+      style="height: 100%"
+    >
+      <updata-photo :img="img" @close="isUpdataPhotoShow = false" />
+    </van-popup>
   </div>
 </template>
 
@@ -63,20 +72,24 @@ import { getUserProfile } from '@/api/user'
 import UpdataName from './components/updata-name'
 import UpdataGender from './components/updata-gender'
 import UpdataBirthday from './components/updata-birthday'
+import UpdataPhoto from './components/updata-photo'
 
 export default {
   name: 'UserProfile',
   components: {
     UpdataName,
     UpdataGender,
-    UpdataBirthday
+    UpdataBirthday,
+    UpdataPhoto
   },
   data() {
     return {
       user: {}, // 个人信息
       isUpdataNameShow: false,
       UpdataGenderShow: false,
-      isUpdataBirthdayShow: false
+      isUpdataBirthdayShow: false,
+      isUpdataPhotoShow: false,
+      img: null
     }
   },
   created() {
@@ -90,6 +103,17 @@ export default {
       } catch (err) {
         this.$toast('数据获取失败')
       }
+    },
+    // 改变
+    onFileChange() {
+      // 获取文件对象
+      const file = this.$refs.file.files[0]
+      // 基于文章对象获取 blod数据
+      this.img = window.URL.createObjectURL(file)
+      // 展示预览图片弹出层
+      this.isUpdataPhotoShow = true
+      // 选择同一个不会触发change事件 把value清空
+      this.$refs.file.value = ''
     }
   }
 }
