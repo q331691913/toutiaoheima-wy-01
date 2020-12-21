@@ -27,7 +27,7 @@
       </div>
       <!-- /回复评论 -->
       <van-popup v-model="isPostShow" position="bottom">
-        <comment-post :target="comment.com_id" @post-success="onPostSuccess" />
+        <comment-post v-if="isReplyShow"  :target="comment.com_id" @post-success="onPostSuccess" />
       </van-popup>
     </div>
   </div>
