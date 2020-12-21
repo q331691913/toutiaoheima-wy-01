@@ -6,13 +6,13 @@
 
     <div class="main-wrap">
       <!-- 加载中 -->
-      <div class="loading-wrap" v-if="isLoading">
+      <div class="loading-wrap" v-if="loading">
         <van-loading color="#3296fa" vertical>加载中</van-loading>
       </div>
       <!-- /加载中 -->
 
       <!-- 加载完成-文章详情 -->
-      <div v-else-if="article.title" class="article-detail">
+      <div class="article-detail" v-else-if="article.title">
         <!-- 文章标题 -->
         <h1 class="article-title">{{ article.title }}</h1>
         <!-- /文章标题 -->
@@ -30,31 +30,11 @@
           <div slot="label" class="publish-date">
             {{ article.pubdate | relativeTime }}
           </div>
-          <van-button
-            v-if="article.is_followed"
+          <follow-user
             class="follow-btn"
-            round
-            color="#F2BB00"
-            size="small"
-            :loading="isFollowLoading"
-            @click="onFollow"
-            >已关注</van-button
-          >
-          <van-button
-            v-else
-            class="follow-btn"
-            round
-            size="small"
-            color="#3296fa"
-            :loading="isFollowLoading"
-            @click="onFollow"
-            >关注</van-button
-          >
-          <!-- <van-button
-            class="follow-btn"
-            round
-            size="small"
-          >已关注</van-button> -->
+            v-model="article.is_followed"
+            :user-id="article.aut_id"
+          ></follow-user>
         </van-cell>
         <!-- /用户信息 -->
 
@@ -62,25 +42,51 @@
         <div
           class="article-content markdown-body"
           v-html="article.content"
-          ref="contentRef"
-        >
-          这是文章内容
-        </div>
+          ref="article-content"
+        ></div>
         <van-divider>正文结束</van-divider>
+        <!-- 文章评论列表 -->
+        <comment-list
+          :source="article.art_id"
+          :list="commentList"
+          @onload-success="totalCommentCount = $event.total_count"
+          @reply-click="onReplyClick"
+        />
+
         <!-- 底部区域 -->
         <div class="article-bottom">
-          <van-button class="comment-btn" type="default" round size="small"
+          <van-button
+            class="comment-btn"
+            type="default"
+            round
+            size="small"
+            @click="isPostShow = true"
             >写评论</van-button
           >
-          <van-icon name="comment-o" info="123" color="#777" />
+          <!-- 这里在 info 替换成 badge -->
+          <van-icon name="comment-o" :badge="totalCommentCount" color="#777" />
+          <!-- 文章收藏 -->
           <collect-article
+            class="btn-item"
             v-model="article.is_collected"
             :article-id="article.art_id"
           />
-          <like-article v-model="article.attitude" :article-id = "article.art_id" />
+          <!-- 文章点赞 -->
+          <like-article
+            class="btn-item"
+            v-model="article.attitude"
+            :article-id="article.art_id"
+          />
           <van-icon name="share" color="#777777"></van-icon>
         </div>
         <!-- /底部区域 -->
+        <!-- 发布评论的弹层 -->
+        <van-popup v-model="isPostShow" position="bottom">
+          <comment-post
+            :target="article.art_id"
+            @post-success="onPostSuccess"
+          ></comment-post>
+        </van-popup>
       </div>
       <!-- /加载完成-文章详情 -->
 
@@ -92,29 +98,50 @@
       <!-- /加载失败：404 -->
 
       <!-- 加载失败：其它未知错误（例如网络原因或服务端异常） -->
-      <div v-else class="error-wrap">
+      <div class="error-wrap" v-else>
         <van-icon name="failure" />
         <p class="text">内容加载失败！</p>
-        <van-button @click="loadArtcileInfo" class="retry-btn"
-          >点击重试</van-button
-        >
+        <van-button class="retry-btn" @click="loadArticle">点击重试</van-button>
       </div>
       <!-- /加载失败：其它未知错误（例如网络原因或服务端异常） -->
     </div>
+    <!-- 评论回复 -->
+    <!-- 弹出层是懒渲染的：只有在第一次展示的时候才会渲染里面的内容，之后它的关闭和显示都是在切换内容的显示和隐藏 -->
+    <van-popup v-model="isReplyShow" position="bottom" style="height: 100%;">
+      <comment-reply
+        v-if="isReplyShow"
+        :comment="currentComment"
+        @close="isReplyShow = false"
+      />
+    </van-popup>
+    <!-- /评论回复 -->
   </div>
 </template>
 
 <script>
-import { getArticleById } from '@/api/article.js'
+import { getArticleById } from '@/api/article'
 import { ImagePreview } from 'vant'
-import { addFollow, deleteFollow } from '@/api/user'
-import collectArticle from './components/collect-article'
-import likeArticle from './components/like-article'
+import FollowUser from '@/components/follow-user'
+import CollectArticle from '@/components/collect-article'
+import LikeArticle from '@/components/like-article'
+import CommentList from './components/comment-list'
+import CommentPost from './components/comment-post'
+import CommentReply from './components/comment-reply'
 export default {
   name: 'ArticleIndex',
   components: {
-    collectArticle,
-    likeArticle
+    FollowUser,
+    CollectArticle,
+    LikeArticle,
+    CommentList,
+    CommentPost,
+    CommentReply
+  },
+  // 给所有的后代组件提供数据
+  provide: function() {
+    return {
+      articleId: this.articleId
+    }
   },
   props: {
     articleId: {
@@ -124,45 +151,59 @@ export default {
   },
   data() {
     return {
-      article: {},
-      isLoading: false,
-      errStatus: 0,
-      isFollowLoading: false
+      article: {}, // 文章详情
+      loading: true, // 加载中的状态
+      errStatus: 0, // 失败的状态码
+      followLoading: false, // 关注按钮的 loading 状态
+      totalCommentCount: 0,
+      isPostShow: false, // 控制评论弹层显示/隐藏
+      commentList: [], // 评论列表
+      isReplyShow: false,
+      currentComment: {} // 当前点击回复的评论项
     }
   },
   computed: {},
   watch: {},
   created() {
-    this.loadArtcileInfo()
+    this.loadArticle()
   },
-  mounted() {},
+  mounted() {
+    // mounted 里面也是拿不到的，因为获取数据的操作是异步（渲染又在获取数据之后）
+    // console.log(this.$refs['article-content'])
+  },
   methods: {
-    async loadArtcileInfo() {
-      this.isLoading = true
+    async loadArticle() {
+      this.loading = true
+      // console.log(this.articleId.toString(), 233)
       try {
-        const { data: res } = await getArticleById(this.articleId)
-        this.article = res.data
-        // 初始化图片点击预览
+        const { data } = await getArticleById(this.articleId)
+        /* if (Math.random() > 0.5) {
+          JSON.parse('xxx')
+        } */
+        // 后端返回的可能是 null
+        if (data.data.attitude === null) {
+          data.data.attitude = -1
+        }
+        this.article = data.data
         setTimeout(() => {
-          this.previewImg()
+          this.previewImage()
         }, 0)
       } catch (err) {
-        // 加载失败 404
         if (err.response && err.response.status === 404) {
           this.errStatus = 404
         }
-        this.$toast('获取失败')
+        console.log('获取数据失败', err)
       }
-      // 加载完成
-      this.isLoading = false
+      // 关闭 loading 状态
+      this.loading = false
     },
-    previewImg() {
-      const contentEl = this.$refs.contentRef
-      const allImg = contentEl.querySelectorAll('img')
+    previewImage() {
+      const articleContent = this.$refs['article-content']
+      const imgs = articleContent.querySelectorAll('img')
       const images = []
-      allImg.forEach((element, index) => {
-        images.push(element.src)
-        element.onclick = () => {
+      imgs.forEach((img, index) => {
+        images.push(img.src)
+        img.onclick = function() {
           ImagePreview({
             images,
             startPosition: index
@@ -170,35 +211,34 @@ export default {
         }
       })
     },
-    async onFollow() {
-      // 开启按钮的 loading 状态
-      this.isFollowLoading = true
-
-      try {
-        // 如果已关注，则取消关注
-        const authorId = this.article.aut_id
-        if (this.article.is_followed) {
-          await deleteFollow(authorId)
-        } else {
-          // 否则添加关注
-          await addFollow(authorId)
-        }
-        // 更新视图
-        this.article.is_followed = !this.article.is_followed
-      } catch (err) {
-        console.log(err)
-        this.$toast.fail('操作失败')
-      }
-      // 关闭按钮的 loading 状态
-      this.isFollowLoading = false
+    onPostSuccess(data) {
+      // 关闭弹层
+      this.isPostShow = false
+      // 将发布内容展示到页面顶部
+      this.commentList.unshift(data.new_obj)
+    },
+    onReplyClick(comment) {
+      console.log(comment)
+      this.currentComment = comment
+      this.isReplyShow = true
     }
   }
 }
 </script>
 
 <style scoped lang="less">
+// 测试 => http://localhost:8080/#/article/138567
+@import './github-markdown.css';
 .article-container {
   .main-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: #fff;
+  }
+  .article-detail {
     position: fixed;
     left: 0;
     right: 0;
@@ -206,8 +246,6 @@ export default {
     bottom: 88px;
     overflow-y: scroll;
     background-color: #fff;
-  }
-  .article-detail {
     .article-title {
       font-size: 40px;
       padding: 50px 32px;
@@ -285,7 +323,7 @@ export default {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 100px;
+    bottom: 80px;
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -301,12 +339,29 @@ export default {
       line-height: 46px;
       color: #a7a7a7;
     }
-    .van-icon {
+    /deep/ .van-icon {
       font-size: 40px;
+    }
+    .comment-icon {
+      top: 2px;
+      color: #777;
       .van-info {
         font-size: 16px;
         background-color: #e22829;
       }
+    }
+    .btn-item {
+      border: none;
+      padding: 0;
+      height: 40px;
+      line-height: 40px;
+      color: #777777;
+    }
+    .collect-btn--collected {
+      color: #ffa500;
+    }
+    .like-btn--liked {
+      color: #e5645f;
     }
   }
 }
