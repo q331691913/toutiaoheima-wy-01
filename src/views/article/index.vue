@@ -8,6 +8,7 @@
     <!-- 评论回复 -->
     <van-popup v-model="isReplyShow" position="bottom" style="height: 100%;">
       <comment-reply
+
         v-if="isReplyShow"
         :comment="currentComment"
         @close="isReplyShow = false"
@@ -93,6 +94,7 @@
         <!-- 发布评论的弹层 -->
         <van-popup v-model="isPostShow" position="bottom">
           <comment-post
+            type="a"
             :target="article.art_id"
             @post-success="onPostSuccess"
           ></comment-post>

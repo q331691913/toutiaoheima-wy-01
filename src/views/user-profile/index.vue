@@ -62,7 +62,12 @@
       position="bottom"
       style="height: 100%"
     >
-      <updata-photo :img="img" @close="isUpdataPhotoShow = false" />
+      <updata-photo
+        v-if="isUpdataPhotoShow"
+        :img="img"
+        @close="isUpdataPhotoShow = false"
+        @updata-photo="user.photo = $event"
+      />
     </van-popup>
   </div>
 </template>

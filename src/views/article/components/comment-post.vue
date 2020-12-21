@@ -25,6 +25,10 @@ export default {
     target: {
       type: [Number, String, Object],
       required: true
+    },
+    type: {
+      type: String,
+      defalut: null
     }
   },
   inject: {
@@ -48,7 +52,11 @@ export default {
         const { data: res } = await addComment({
           target: this.target.toString(), // 评论的目标id
           content: this.message, // 评论内容
-          art_id: this.articleId ? this.articleId.toString() : this.articleId // 文章id，对评论内容发表回复时，需要传递此参数
+          art_id:
+            // this.articleId.toString() === this.target.toString()
+            //   ? null
+            //   : this.articleId.toString() // 文章id，对评论内容发表回复时，需要传递此参数
+            this.type === 'a' ? null : this.articleId
         })
         console.log(res)
         // 关闭弹出层
