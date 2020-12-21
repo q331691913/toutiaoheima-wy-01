@@ -2,6 +2,7 @@
   <van-button
     v-if="isFollowed"
     round
+    color="#F1E3D8"
     size="small"
     @click="onFollow"
     :loading="loading"

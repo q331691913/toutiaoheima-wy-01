@@ -2,7 +2,7 @@
   <div class="article-container">
     <!-- 导航栏 -->
     <van-nav-bar class="page-nav-bar" title="黑马头条">
-      <van-icon slot="left" name="arrow-left"  @click="this.$router.back()" />
+      <van-icon slot="left" name="arrow-left"  @click="$router.back()" />
     </van-nav-bar>
     <!-- /导航栏 -->
 
