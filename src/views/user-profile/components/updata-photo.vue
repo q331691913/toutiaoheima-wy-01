@@ -27,14 +27,13 @@ export default {
   mounted() {
     const image = this.$refs.img
     this.cropper = new Cropper(image, {
-      // aspectRatio: 16 / 9,
-      dragMode: 'move',
-      aspectRatio: 1,
-      autoCropArea: 1,
-      cropBoxMovable: false,
-      cropBoxResizable: false,
-      background: false,
-      movable: true
+      viewMode: 1, // 裁剪框限制在画布当中
+      dragMode: 'move', // 不允许直接选择裁剪框的大小，只能移动
+      aspectRatio: 1, // 截图框的比例
+      autoCropArea: 1, // 自动截取的比例，一边丁满
+      cropBoxMovable: false, // 只能是背后的画布移动
+      cropBoxResizable: false, // 截图区域不允许缩放大小
+      background: false // 关闭自带背景
     })
   },
   methods: {
@@ -44,7 +43,7 @@ export default {
 
       // 基于纯客户端的裁切使用 getCroppedCanvas 获取裁切的文件对象
       this.cropper.getCroppedCanvas().toBlob(blob => {
-        this.updateUserPhotos()
+        this.updateUserPhotos(blob)
       })
     },
     async updateUserPhotos(blob) {
@@ -64,7 +63,7 @@ export default {
         this.$emit('updata-photo', res.data.photo)
         this.$toast('更新成功')
       } catch (error) {
-        this.$toast('更新失败')
+        this.$toast.fail('更新失败')
       }
     }
   }
