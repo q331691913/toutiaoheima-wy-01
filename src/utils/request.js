@@ -33,6 +33,7 @@ request.interceptors.request.use(
     return Promise.reject(error)
   }
 )
+// 响应拦截器
 request.interceptors.response.use(
   function(response) {
     return response
@@ -43,12 +44,7 @@ request.interceptors.response.use(
     } else if (status === 401) {
       const { user } = store.state
       if (!user || user.refresh_token) {
-        return router.replace({
-          name: 'login',
-          query: {
-            redirect: router.currentRoute.fullPath
-          }
-        })
+        return redirectLogin()
       }
       try {
         const { data } = await requestToken({
@@ -64,12 +60,7 @@ request.interceptors.response.use(
       } catch (err) {
         // 换取token的时候出错了
         Toast.fail('无效的Token')
-        return router.replace({
-          name: 'login',
-          query: {
-            redirect: router.currentRoute.fullPath
-          }
-        })
+        return redirectLogin()
       }
     } else if (status === 403) {
       Toast.fail('客户没有权限')
@@ -83,5 +74,12 @@ request.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-
+function redirectLogin() {
+  router.replace({
+    name: 'login',
+    query: {
+      redirect: router.currentRoute.fullPath
+    }
+  })
+}
 export default request
